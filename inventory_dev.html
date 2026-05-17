@@ -901,8 +901,7 @@ function renderPreview(files, hashes, container, box) {
 }
 
 async function addFiles(newFiles, files, hashes, container, box, label) {
-  let skipped = 0, added = 0, unsupported = 0;
-  const badNames = [];
+  let skipped = 0, added = 0;
   for (const f of newFiles) {
     let h = '';
     try {
@@ -911,33 +910,16 @@ async function addFiles(newFiles, files, hashes, container, box, label) {
       console.warn('해시 실패:', err);
     }
     if (h && hashes.includes(h)) { skipped++; continue; }
-
-    // 디코드 가능한지 미리 검증 (HEIC, 손상 파일 등은 여기서 걸러짐)
-    let canDecode = false;
-    try {
-      const src = await decodeImageElement(f);
-      if (src && src.close) src.close();
-      if (src && src.src && src.src.startsWith('blob:')) URL.revokeObjectURL(src.src);
-      canDecode = true;
-    } catch (e) { /* 통과 */ }
-    if (!canDecode) {
-      unsupported++;
-      badNames.push(f.name || '이름없음');
-      continue;
-    }
-
+    // 디코드 검증은 분석 시점에 함 (업로드 단계에서는 차단하지 않음)
     files.push(f);
     hashes.push(h);
     added++;
   }
   renderPreview(files, hashes, container, box);
-  const msgs = [];
-  if (skipped > 0) msgs.push(`같은 ${label} 사진 ${skipped}장 건너뜀`);
-  if (unsupported > 0) msgs.push(`⚠️ 지원 안 되는 ${label} 사진 ${unsupported}장 건너뜀 (${badNames.join(', ')}) — HEIC/HEIF는 폰 설정에서 JPG로 변환하세요`);
-  if (msgs.length > 0) {
-    const msg = msgs.join(' · ');
-    setStatus(msg, unsupported > 0);
-    clearStatusAfter(msg, 6000);
+  if (skipped > 0) {
+    const msg = `⚠️ 같은 ${label} 사진 ${skipped}장을 자동으로 건너뛰었습니다${added > 0 ? ` (새로 ${added}장 추가)` : ''}`;
+    setStatus(msg, false);
+    clearStatusAfter(msg, 4000);
   }
 }
 
@@ -1032,23 +1014,25 @@ function updateUndoButton() {
 undoBtn.addEventListener('click', performUndo);
 
 // ===== Image processing =====
-// createImageBitmap 우선 사용 (대용량/HEIC 일부 지원, 메모리 효율 좋음).
-// 실패 시 일반 <img>로 폴백.
+// <img>를 우선 사용 (가장 호환성 좋음, 대부분 JPG/PNG는 여기서 처리됨).
+// 실패하면 createImageBitmap 폴백 (HEIC 일부 지원).
 async function decodeImageElement(file) {
-  if (typeof createImageBitmap === 'function') {
-    try {
-      return await createImageBitmap(file);
-    } catch (e) {
-      // 폴백으로 계속
+  try {
+    return await new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => resolve(img);
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img decode failed')); };
+      img.src = url;
+    });
+  } catch (e) {
+    if (typeof createImageBitmap === 'function') {
+      try {
+        return await createImageBitmap(file);
+      } catch (e2) { /* 둘 다 실패 */ }
     }
+    throw new Error('decode failed');
   }
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => resolve(img);
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode failed')); };
-    img.src = url;
-  });
 }
 
 async function fileToResizedB64(file, maxDim = 2000, quality = 0.85) {
