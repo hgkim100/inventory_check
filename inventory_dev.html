@@ -656,7 +656,7 @@
     <button class="icon-btn" id="settingsBtn" title="설정">⚙️</button>
   </header>
   <div id="versionBar" style="text-align:center; font-size:11px; color:#8e8e93; margin:-4px 0 8px;">
-    v2026-05-17.e · 영수증 미매칭 항목 → 유사도 자동 매칭 + 경고
+    v2026-05-17.f · 영수증 OCR 순서 정렬 강화 (fuzzy 매칭)
   </div>
 
   <div class="panel hidden" id="settingsPanel">
@@ -1498,6 +1498,36 @@ function levenshtein(a, b) {
   return prev[b.length];
 }
 
+// 항목 이름이 영수증 순서 배열에서 어느 위치에 있는지 찾는다.
+// 1) normalize 일치 → 2) coreName(숫자제거) 일치/포함 → 3) Levenshtein fuzzy.
+// 한 칸도 못찾으면 -1.
+function findReceiptOrderIndex(itemName, receiptOrder) {
+  const target = normalizeName(itemName);
+  if (!target || !Array.isArray(receiptOrder) || receiptOrder.length === 0) return -1;
+  // 1) 정확히 일치
+  let idx = receiptOrder.findIndex(o => normalizeName(o) === target);
+  if (idx !== -1) return idx;
+  // 2) 코어 이름 (숫자 제거) 포함 관계
+  const targetCore = coreName(itemName);
+  if (targetCore) {
+    idx = receiptOrder.findIndex(o => {
+      const c = coreName(o);
+      return c && (c === targetCore || c.includes(targetCore) || targetCore.includes(c));
+    });
+    if (idx !== -1) return idx;
+  }
+  // 3) Levenshtein 최고 점수 (0.3 이상이면 매칭)
+  let bestIdx = -1, bestScore = 0.3;
+  for (let i = 0; i < receiptOrder.length; i++) {
+    const on = normalizeName(receiptOrder[i]);
+    if (!on) continue;
+    const maxLen = Math.max(target.length, on.length, 1);
+    const score = 1 - levenshtein(target, on) / maxLen;
+    if (score > bestScore) { bestScore = score; bestIdx = i; }
+  }
+  return bestIdx;
+}
+
 // 영수증 OCR 이 31개 canonical 항목 중 하나를 못 맞췄을 때, 가장 비슷한
 // canonical 항목 인덱스를 돌려준다. 매장에는 신상품이 거의 없으므로 항상 매칭.
 // 점수 = (1 - levenshtein/maxLen) + 포함관계 보너스.
@@ -1945,11 +1975,13 @@ function renderOcrReceiptPane(idx) {
     return pane;
   }
 
-  // 영수증에 출력된 순서대로 정렬 (OCR과 같은 순서로 비교하기 위함)
-  const orderRef = (appState.receipt_orders[idx] || []).map(n => normalizeName(n));
+  // 영수증에 출력된 순서대로 정렬 (Gemini 가 돌려준 receipt_orders 를 그대로 따름).
+  // canonical 이름("닭꼬치구이4,500")이 영수증 표기("닭꼬치구이")와 달라도
+  // findReceiptOrderIndex 가 코어이름/Levenshtein 으로 자리를 찾아냄.
+  const orderRaw = appState.receipt_orders[idx] || [];
   items.sort((a, b) => {
-    const ai = orderRef.indexOf(normalizeName(a.ledger_name));
-    const bi = orderRef.indexOf(normalizeName(b.ledger_name));
+    const ai = findReceiptOrderIndex(a.ledger_name, orderRaw);
+    const bi = findReceiptOrderIndex(b.ledger_name, orderRaw);
     if (ai === -1 && bi === -1) return 0;
     if (ai === -1) return 1;
     if (bi === -1) return -1;
