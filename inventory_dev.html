@@ -539,19 +539,43 @@
   /* Image modal */
   .image-modal {
     position: fixed;
-    inset: 0;
+    top: 0; right: 0; bottom: 0; left: 0;
     background: rgba(0,0,0,0.95);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
-    cursor: zoom-out;
+    padding: 20px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .image-modal img {
+    display: block;
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain;
+    width: auto;
+    height: auto;
+    background: white;
+  }
+  .modal-close {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.25);
+    color: white;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 1001;
+    font-family: inherit;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Per-item amount row */
@@ -672,6 +696,7 @@
   <div id="ocrResults" class="hidden"></div>
 
   <div id="imageModal" class="image-modal hidden">
+    <button class="modal-close" id="imageModalClose" type="button" aria-label="닫기">×</button>
     <img id="imageModalImg" alt="">
   </div>
 
@@ -693,7 +718,7 @@ const CATEGORIES = ['꼬치전문점', '떡볶이', '주전부리', '밥톡', '�
 // 공백/쉼표 제거, 소문자. 사이즈 구분 괄호(예: (대)/(중)/(소))는 유지.
 // 가격이 변하면 여기 값만 바꾸면 됨.
 const UNIT_PRICES = {
-  // 꼬치전문점 (모두 알뜰 가격 3,700)
+  // 꼬치전문점 (모두 알뜰가격 3,700)
   '감자핫도그': 3700,
   '떡꼬치': 3700,
   '소떡소떡': 3700,
@@ -701,7 +726,7 @@ const UNIT_PRICES = {
   '옥수수': 3700,
   '치킨팝콘': 3700,
   '포크소세지': 3700,
-  '해돋바': 3700,
+  '해물바': 3700,
   // 떡볶이
   '꼬치어묵': 3700,
   '떡볶이': 3700,
@@ -719,15 +744,59 @@ const UNIT_PRICES = {
   '델리만쥬6000': 6000,
   '전기구이오징어': 9000,
   '전기구이쥐포': 5000,
-  // 밥톡
-  '꽈배기5.0': 5500,
-  '닭껍질튀김4.5': 4500,
+  // 밥톡 (이름 끝 "5,0" / "5.0" → normalize 후 "50")
+  '꽈배기50': 5500,
+  '닭껍질튀김45': 4500,
   '매직핫도그': 5500,
   '불갈비맛소세지': 4500,
-  '참쌀도너츠5.0': 5000,
-  '타코야끼5.0': 5000,
+  '찹쌀도너츠50': 5000,
+  '타코야끼50': 5000,
   '허브하라이드꼬치': 5500,
   '회오리감자': 4500,
+};
+
+// 대장의 정식 품목 순서 (categories.txt 기준). 정리 탭 최종 결과를 이 순서대로 정렬.
+// AI가 다른 순서로 반환해도 분석 후 sortItemsToCanonicalOrder()가 강제로 맞춤.
+const LEDGER_ITEM_ORDER = {
+  '꼬치전문점': [
+    '[알뜰]감자핫도그',
+    '[알뜰]떡꼬치',
+    '[알뜰]소떡소떡',
+    '[알뜰]옛날핫도그',
+    '[알뜰]옥수수',
+    '[알뜰]치킨팝콘',
+    '[알뜰]포크소세지',
+    '[알뜰]해물바',
+  ],
+  '떡볶이': [
+    '[알뜰]꼬치어묵',
+    '[알뜰]떡볶이',
+    '공주알밤빵(대)',
+    '공주알밤빵(소)',
+    '공주알밤빵(중)',
+    '닭꼬치구이4,500',
+    '체다치즈스틱5,500',
+    '통새우볼 꼬치구이5,000',
+  ],
+  '주전부리': [
+    '[알뜰]델리만쥬',
+    '[알뜰]쥐포',
+    '고구마스틱',
+    '델리만쥬12,000',
+    '델리만쥬6,000',
+    '전기구이오징어',
+    '전기구이쥐포',
+  ],
+  '밥톡': [
+    '꽈배기 5,0',
+    '닭껍질튀김 4.5',
+    '매직핫도그',
+    '불갈비맛소세지',
+    '찹쌀도너츠 5,0',
+    '타코야끼 5,0',
+    '허브하라이드꼬치',
+    '회오리감자',
+  ],
 };
 
 // ===== State =====
@@ -740,6 +809,7 @@ let appState = {
   receiptCount: 0,
   ledger_subtotals: {},   // { 카테고리: { previous_stock, incoming, returns } }
   receipt_subtotals: [],  // [ { 카테고리: salesQty } ]
+  receipt_orders: [],     // [ [normalized name in receipt order, ...], ... ]
 };
 let nextId = 1;
 let currentMainTab = 'summary';
@@ -892,6 +962,7 @@ resetBtn.addEventListener('click', () => {
   appState.receiptCount = 0;
   appState.ledger_subtotals = {};
   appState.receipt_subtotals = [];
+  appState.receipt_orders = [];
   undoStack.length = 0;
   updateUndoButton();
   resultsEl.innerHTML = '';
@@ -911,6 +982,7 @@ function snapshotState() {
     items: appState.items,
     ledger_subtotals: appState.ledger_subtotals,
     receipt_subtotals: appState.receipt_subtotals,
+    receipt_orders: appState.receipt_orders,
   });
 }
 
@@ -927,6 +999,7 @@ function performUndo() {
   appState.items = restored.items || [];
   appState.ledger_subtotals = restored.ledger_subtotals || {};
   appState.receipt_subtotals = restored.receipt_subtotals || [];
+  appState.receipt_orders = restored.receipt_orders || [];
   renderResults();
   updateUndoButton();
   setStatus('되돌렸습니다', false);
@@ -1029,12 +1102,16 @@ JSON만 응답. 코드 펜스, 설명 모두 금지. 스키마:
   },
   "receipt_subtotals": [
     { "꼬치전문점": 13, "떡볶이": 3, "주전부리": 5, "밥톡": 2 }
+  ],
+  "receipt_orders": [
+    ["[알뜰]감자핫도그", "닭꼬치구이4,500", "고구마스틱"]
   ]
 }
 
 sales_per_receipt 길이는 정확히 ${receiptCount}. 해당 영수증에 없으면 0.
 receipt_subtotals 길이는 정확히 ${receiptCount}. 영수증에 해당 카테고리가 없으면 null 또는 생략.
 ledger_subtotals의 빈 카테고리는 빈 객체 {} 또는 모든 값 null 가능.
+receipt_orders 길이는 정확히 ${receiptCount}. 각 영수증에서 상품이 출력된 순서대로 ledger_name 문자열 배열. 영수증 검증용으로 사용.
 대장의 상품 순서대로 items 배열에 담고, 대장에 없는 영수증 전용 상품은 맨 끝에 추가.`;
 }
 
@@ -1133,6 +1210,17 @@ async function analyze() {
       appState.receipt_subtotals.push(entry);
     }
 
+    // 영수증별 항목 출현 순서 (OCR 검증 탭에서 영수증 순서대로 보여주기 위함)
+    appState.receipt_orders = [];
+    const rawOrders = Array.isArray(parsed.receipt_orders) ? parsed.receipt_orders : [];
+    for (let i = 0; i < appState.receiptCount; i++) {
+      const arr = Array.isArray(rawOrders[i]) ? rawOrders[i] : [];
+      appState.receipt_orders.push(arr.map(String));
+    }
+
+    // 정리 탭 최종 결과를 대장 순서대로 강제 정렬
+    sortItemsToCanonicalOrder();
+
     currentMainTab = 'summary';
     currentSubTab = 'ledger';
     undoStack.length = 0;
@@ -1214,10 +1302,10 @@ function calcGroupTotals(items) {
 function normalizeName(name) {
   // 앞쪽 괄호 [알뜰], (알뜰간식), {뭐든} 같은 것 1회 제거.
   // (대)/(중)/(소) 처럼 사이즈 구분 괄호는 이름 중간/끝에 오므로 유지됨.
-  // 공백·쉼표 제거. 소문자.
+  // 공백·쉼표·마침표 제거 → "5,0"과 "5.0"이 같은 키로 매핑됨.
   return String(name || '')
     .replace(/^\s*[\(\[\{][^\)\]\}]*[\)\]\}]\s*/, '')
-    .replace(/[\s,]+/g, '')
+    .replace(/[\s,.]+/g, '')
     .toLowerCase();
 }
 
@@ -1240,6 +1328,25 @@ function getUnitPrice(item) {
   if (norm && UNIT_PRICES[norm] !== undefined) return UNIT_PRICES[norm];
   // 2순위: 이름에 baked-in 가격 파싱
   return parsePriceFromName(item.ledger_name);
+}
+
+// AI가 반환한 items를 LEDGER_ITEM_ORDER 기준으로 강제 정렬.
+// 카테고리 → 카테고리 내 순서. 목록에 없는 항목은 해당 카테고리 끝으로.
+function sortItemsToCanonicalOrder() {
+  const orderInfo = (item) => {
+    const cat = CATEGORIES.includes(item.category) ? item.category : '기타';
+    const arr = LEDGER_ITEM_ORDER[cat] || [];
+    const norm = normalizeName(item.ledger_name);
+    const idx = arr.findIndex(name => normalizeName(name) === norm);
+    return { cat, idx: idx === -1 ? 1e9 : idx };
+  };
+  appState.items.sort((a, b) => {
+    const ai = orderInfo(a);
+    const bi = orderInfo(b);
+    const catCmp = CATEGORIES.indexOf(ai.cat) - CATEGORIES.indexOf(bi.cat);
+    if (catCmp !== 0) return catCmp;
+    return ai.idx - bi.idx;
+  });
 }
 
 // ===== Subtotal comparison (대장/영수증 OCR값 vs 계산값) =====
@@ -1612,6 +1719,17 @@ function renderOcrReceiptPane(idx) {
     return pane;
   }
 
+  // 영수증에 출력된 순서대로 정렬 (OCR과 같은 순서로 비교하기 위함)
+  const orderRef = (appState.receipt_orders[idx] || []).map(n => normalizeName(n));
+  items.sort((a, b) => {
+    const ai = orderRef.indexOf(normalizeName(a.ledger_name));
+    const bi = orderRef.indexOf(normalizeName(b.ledger_name));
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
   const tbl = document.createElement('div');
   tbl.className = 'ocr-table';
   const thead = document.createElement('div');
@@ -1619,28 +1737,16 @@ function renderOcrReceiptPane(idx) {
   thead.innerHTML = `<span>상품명</span><span>판매수량</span>`;
   tbl.appendChild(thead);
 
-  const groups = {};
-  for (const cat of CATEGORIES) groups[cat] = [];
+  // 영수증 순서 정렬에서는 카테고리 구분 없이 한 줄로 (영수증 순서가 우선)
   for (const item of items) {
-    const cat = CATEGORIES.includes(item.category) ? item.category : '기타';
-    groups[cat].push(item);
-  }
-  for (const cat of CATEGORIES) {
-    if (groups[cat].length === 0) continue;
-    const div = document.createElement('div');
-    div.className = 'ocr-cat-divider';
-    div.textContent = cat;
-    tbl.appendChild(div);
-    for (const item of groups[cat]) {
-      const row = document.createElement('div');
-      row.className = 'ocr-row cols-receipt';
-      row.dataset.id = item.id;
-      row.innerHTML = `
-        <div class="ocr-name">${escHtml(item.ledger_name || '(이름 없음)')}</div>
-        <input type="number" inputmode="numeric" class="num-input" data-id="${item.id}" data-field="sales" data-receipt="${idx}" value="${item.sales_per_receipt[idx]}" placeholder="0">
-      `;
-      tbl.appendChild(row);
-    }
+    const row = document.createElement('div');
+    row.className = 'ocr-row cols-receipt';
+    row.dataset.id = item.id;
+    row.innerHTML = `
+      <div class="ocr-name">${escHtml(item.ledger_name || '(이름 없음)')}</div>
+      <input type="number" inputmode="numeric" class="num-input" data-id="${item.id}" data-field="sales" data-receipt="${idx}" value="${item.sales_per_receipt[idx]}" placeholder="0">
+    `;
+    tbl.appendChild(row);
   }
   pane.appendChild(tbl);
   return pane;
@@ -1681,9 +1787,14 @@ function openImage(src) {
   imageModalImg.src = src;
   imageModal.classList.remove('hidden');
 }
-imageModal.addEventListener('click', () => {
+function closeImageModal() {
   imageModal.classList.add('hidden');
   imageModalImg.src = '';
+}
+imageModal.addEventListener('click', e => {
+  // 이미지 자체를 탭한 경우엔 안 닫고(핀치 줌 등 가능), 배경/버튼 탭만 닫기
+  if (e.target === imageModalImg) return;
+  closeImageModal();
 });
 
 // ===== Shared edit handlers (정리 + OCR) =====
