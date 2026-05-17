@@ -323,9 +323,18 @@
   }
   .subtotal .sgrid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 4px;
   }
+  .subtotal .sgrid-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(0,122,255,0.2);
+  }
+  .subtotal .scell.amount .sval { color: #34c759; font-size: 17px; }
   .subtotal .scell {
     display: flex;
     flex-direction: column;
@@ -360,9 +369,18 @@
   }
   .grand-total .ggrid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 4px;
   }
+  .grand-total .ggrid-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.25);
+  }
+  .grand-total .gcell.amount .gval { font-size: 19px; color: #ffe066; }
   .grand-total .gcell {
     display: flex;
     flex-direction: column;
@@ -392,6 +410,202 @@
     line-height: 1.6;
   }
   .footer-tip strong { color: #1d1d1f; }
+
+  /* Main tabs (정리 / OCR 검증) */
+  .main-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 0 4px 10px 4px;
+    border-bottom: 1px solid #e5e5e7;
+  }
+  .main-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 10px 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #8e8e93;
+    cursor: pointer;
+    font-family: inherit;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .main-tab.active { color: #007aff; border-bottom-color: #007aff; }
+
+  /* Sub tabs (대장 / 영수증1..N) */
+  .sub-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+    padding: 4px 0 8px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sub-tab {
+    flex-shrink: 0;
+    background: #f5f5f7;
+    border: 1px solid transparent;
+    padding: 8px 14px;
+    border-radius: 18px;
+    font-size: 13px;
+    color: #1d1d1f;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .sub-tab.active { background: #007aff; color: white; border-color: #007aff; }
+
+  /* OCR pane */
+  .ocr-pane { display: none; }
+  .ocr-pane.active { display: block; }
+  .ocr-images { margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .ocr-images img {
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+    background: #1d1d1f;
+    border-radius: 10px;
+    cursor: zoom-in;
+  }
+  .ocr-hint {
+    font-size: 12px;
+    color: #8e8e93;
+    text-align: center;
+    padding: 0 0 10px 0;
+  }
+  .ocr-table {
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e5e5e7;
+    overflow: hidden;
+  }
+  .ocr-thead {
+    display: grid;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f5f5f7;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 1px solid #e5e5e7;
+  }
+  .ocr-thead.cols-ledger { grid-template-columns: 1fr 56px 56px 56px; }
+  .ocr-thead.cols-receipt { grid-template-columns: 1fr 80px; }
+  .ocr-thead span:not(:first-child) { text-align: center; }
+  .ocr-row {
+    display: grid;
+    gap: 6px;
+    padding: 8px 10px;
+    align-items: center;
+    border-bottom: 1px solid #f5f5f7;
+  }
+  .ocr-row.cols-ledger { grid-template-columns: 1fr 56px 56px 56px; }
+  .ocr-row.cols-receipt { grid-template-columns: 1fr 80px; }
+  .ocr-row:last-child { border-bottom: none; }
+  .ocr-row.warn { background: #fffaf0; }
+  .ocr-row .ocr-name { font-size: 14px; font-weight: 500; word-break: keep-all; }
+  .ocr-row .num-input {
+    width: 100%;
+    padding: 6px 4px;
+    font-size: 14px;
+    text-align: center;
+  }
+  .ocr-row .ocr-warning {
+    grid-column: 1 / -1;
+    font-size: 11px;
+    color: #ff9500;
+    margin-top: 4px;
+  }
+  .ocr-cat-divider {
+    background: #1d1d1f;
+    color: white;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .ocr-empty {
+    text-align: center;
+    color: #8e8e93;
+    font-size: 13px;
+    padding: 30px 16px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e5e5e7;
+  }
+
+  /* Image modal */
+  .image-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: zoom-out;
+  }
+  .image-modal img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* Per-item amount row */
+  .amount-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed #e5e5e7;
+  }
+  .amount-row .amount-label {
+    font-size: 11px;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .amount-row .amount-formula {
+    flex: 1;
+    font-size: 11.5px;
+    color: #8e8e93;
+    font-family: ui-monospace, monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .amount-row .amount-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #34c759;
+    font-family: ui-monospace, monospace;
+    flex-shrink: 0;
+  }
+  .amount-row.no-price .amount-value { color: #c7c7cc; font-size: 14px; font-weight: 500; }
+
+  /* Subtotal / OCR mismatch warning */
+  .mismatch-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #856404;
+    line-height: 1.4;
+  }
+  .mismatch-warning strong { color: #b45309; }
+  .ocr-table .mismatch-warning {
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
 </style>
 </head>
 <body>
@@ -448,7 +662,18 @@
       <button class="ghost" id="resetBtn">↻ 다시 시작</button>
     </div>
   </div>
+
+  <div id="mainTabs" class="main-tabs hidden">
+    <button class="main-tab active" data-tab="summary" type="button">📋 정리</button>
+    <button class="main-tab" data-tab="ocr" type="button">🔍 OCR 검증</button>
+  </div>
+
   <div id="results"></div>
+  <div id="ocrResults" class="hidden"></div>
+
+  <div id="imageModal" class="image-modal hidden">
+    <img id="imageModalImg" alt="">
+  </div>
 
   <div class="footer-tip">
     <strong>모든 덧셈/뺄셈은 브라우저 계산기가 합니다.</strong> AI는 이미지에서 숫자만 읽고,<br>
@@ -460,17 +685,66 @@
 <script>
 "use strict";
 
-// ===== State =====
+// ===== Constants =====
 const CATEGORIES = ['꼬치전문점', '떡볶이', '주전부리', '밥톡', '기타'];
+
+// 매장 상품 단가표 (원). jaego.jpg에서 추출.
+// 키는 normalizeName(상품명)의 결과 — 앞 괄호([알뜰], (알뜰간식) 등)는 제거,
+// 공백/쉼표 제거, 소문자. 사이즈 구분 괄호(예: (대)/(중)/(소))는 유지.
+// 가격이 변하면 여기 값만 바꾸면 됨.
+const UNIT_PRICES = {
+  // 꼬치전문점 (모두 알뜰 가격 3,700)
+  '감자핫도그': 3700,
+  '떡꼬치': 3700,
+  '소떡소떡': 3700,
+  '옛날핫도그': 3700,
+  '옥수수': 3700,
+  '치킨팝콘': 3700,
+  '포크소세지': 3700,
+  '해돋바': 3700,
+  // 떡볶이
+  '꼬치어묵': 3700,
+  '떡볶이': 3700,
+  '공주알밤빵(대)': 13000,
+  '공주알밤빵(소)': 4000,
+  '공주알밤빵(중)': 7000,
+  '닭꼬치구이4500': 4500,
+  '체다치즈스틱5500': 5500,
+  '통새우볼꼬치구이5000': 5000,
+  // 주전부리
+  '델리만쥬': 3500,         // [알뜰]델리만쥬
+  '쥐포': 4000,
+  '고구마스틱': 4500,
+  '델리만쥬12000': 12000,
+  '델리만쥬6000': 6000,
+  '전기구이오징어': 9000,
+  '전기구이쥐포': 5000,
+  // 밥톡
+  '꽈배기5.0': 5500,
+  '닭껍질튀김4.5': 4500,
+  '매직핫도그': 5500,
+  '불갈비맛소세지': 4500,
+  '참쌀도너츠5.0': 5000,
+  '타코야끼5.0': 5000,
+  '허브하라이드꼬치': 5500,
+  '회오리감자': 4500,
+};
+
+// ===== State =====
 const ledgerFiles = [];
-const ledgerHashes = [];   // parallel to ledgerFiles
+const ledgerHashes = [];
 const receiptFiles = [];
-const receiptHashes = [];  // parallel to receiptFiles
+const receiptHashes = [];
 let appState = {
-  items: [],          // { id, category, ledger_name, previous_stock, incoming, returns, sales_per_receipt, warnings }
+  items: [],
   receiptCount: 0,
+  ledger_subtotals: {},   // { 카테고리: { previous_stock, incoming, returns } }
+  receipt_subtotals: [],  // [ { 카테고리: salesQty } ]
 };
 let nextId = 1;
+let currentMainTab = 'summary';
+let currentSubTab = 'ledger';
+let activeOcrObjectUrls = [];
 
 // ===== DOM refs =====
 const $ = sel => document.querySelector(sel);
@@ -489,11 +763,15 @@ const receiptBox = $('#receiptBox');
 const analyzeBtn = $('#analyzeBtn');
 const statusEl = $('#status');
 const resultsEl = $('#results');
+const ocrResultsEl = $('#ocrResults');
 const resultsBar = $('#resultsBar');
 const resultsSummary = $('#resultsSummary');
 const resetBtn = $('#resetBtn');
 const undoBtn = $('#undoBtn');
 const clearKeyBtn = $('#clearKey');
+const mainTabsEl = $('#mainTabs');
+const imageModal = $('#imageModal');
+const imageModalImg = $('#imageModalImg');
 
 // ===== Settings =====
 apiKeyInput.value = localStorage.getItem('geminiApiKey') || '';
@@ -524,8 +802,6 @@ function setStatus(msg, isError = false) {
 
 // ===== File previews =====
 async function hashFile(file) {
-  // SHA-256 hash of raw bytes. Identical files → identical hash.
-  // Re-photographed receipts have different pixel data → different hash.
   const buf = await file.arrayBuffer();
   const digest = await crypto.subtle.digest('SHA-256', buf);
   return Array.from(new Uint8Array(digest))
@@ -597,6 +873,13 @@ receiptInput.addEventListener('change', async e => {
   await addFiles(files, receiptFiles, receiptHashes, receiptPreview, receiptBox, '영수증');
 });
 
+function clearOcrView() {
+  for (const u of activeOcrObjectUrls) URL.revokeObjectURL(u);
+  activeOcrObjectUrls = [];
+  ocrResultsEl.innerHTML = '';
+  ocrResultsEl.classList.add('hidden');
+}
+
 resetBtn.addEventListener('click', () => {
   if (appState.items.length > 0 && !confirm('정말 다시 시작할까요? 수정 내역이 모두 사라집니다.')) return;
   ledgerFiles.length = 0;
@@ -607,10 +890,14 @@ resetBtn.addEventListener('click', () => {
   renderPreview(receiptFiles, receiptHashes, receiptPreview, receiptBox);
   appState.items = [];
   appState.receiptCount = 0;
+  appState.ledger_subtotals = {};
+  appState.receipt_subtotals = [];
   undoStack.length = 0;
   updateUndoButton();
   resultsEl.innerHTML = '';
+  clearOcrView();
   resultsBar.classList.add('hidden');
+  mainTabsEl.classList.add('hidden');
   setStatus('');
 });
 
@@ -619,12 +906,16 @@ const undoStack = [];
 const MAX_UNDO = 50;
 let preEditSnapshot = null;
 
-function snapshotItems() {
-  return JSON.stringify(appState.items);
+function snapshotState() {
+  return JSON.stringify({
+    items: appState.items,
+    ledger_subtotals: appState.ledger_subtotals,
+    receipt_subtotals: appState.receipt_subtotals,
+  });
 }
 
-function pushUndo(snapshot) {
-  undoStack.push(snapshot ?? snapshotItems());
+function pushUndo(snap) {
+  undoStack.push(snap ?? snapshotState());
   if (undoStack.length > MAX_UNDO) undoStack.shift();
   updateUndoButton();
 }
@@ -632,7 +923,10 @@ function pushUndo(snapshot) {
 function performUndo() {
   if (undoStack.length === 0) return;
   const prev = undoStack.pop();
-  appState.items = JSON.parse(prev);
+  const restored = JSON.parse(prev);
+  appState.items = restored.items || [];
+  appState.ledger_subtotals = restored.ledger_subtotals || {};
+  appState.receipt_subtotals = restored.receipt_subtotals || [];
   renderResults();
   updateUndoButton();
   setStatus('되돌렸습니다', false);
@@ -682,28 +976,33 @@ function buildPrompt(ledgerCount, receiptCount) {
 - 처음 ${ledgerCount}장: 재고관리 대장 (손글씨 표)
 - 다음 ${receiptCount}장: 키오스크 영수증 (인쇄, 순서대로 영수증1~영수증${receiptCount})
 
-대장의 컬럼: 상품명 | 전재고 | 입고 | 판매 | 반품 | 현재고 | 단가 | 금액
+[대장 - 상품 행]
+컬럼: 상품명 | 전재고 | 입고 | 판매 | 반품 | 현재고 | 단가 | 금액
 - "전재고", "입고", "반품" 칸의 손글씨 숫자만 읽으세요. 빈 칸은 null.
-- "판매"와 "현재고" 칸은 무시하세요 (코드가 계산할 부분).
+- "판매", "현재고", "금액" 칸은 무시 (코드가 계산).
+- "단가" 칸도 무시 (코드의 단가표 사용).
 - "△15", "▽15", "Δ15" 등 삼각형 기호는 반품 15를 의미.
-- "소계" 행 (꼬치전문점 소계 / 떡볶이 소계 / 주전부리 소계 / 밥톡 소계)은 무시.
 
-영수증에서 추출할 것:
-- 각 상품의 "판매수량"만 (단가/금액 무시).
-- "<0125>", "<0181>", "<0184>", "<0197>", "소계", "총 계" 같은 합계 행은 무시.
+[대장 - 소계 행]
+"꼬치전문점 소계", "떡볶이 소계", "주전부리 소계", "밥톡 소계" 행에서 "전재고", "입고", "반품" 칸의 손글씨 숫자를 읽으세요. 빈 칸은 null. (코드가 합산값과 비교해서 OCR 검증에 사용)
 
-카테고리 분류 (각 상품의 category 필드):
+[영수증]
+- 각 상품의 "판매수량"만 읽으세요 (단가/금액 무시).
+- 카테고리 소계 코드 행 ("<0125>", "<0181>", "<0184>", "<0197>") 옆에 적힌 카테고리별 판매수량 합계도 읽으세요. <0125> = 꼬치전문점, <0181> = 떡볶이, <0184> = 주전부리, <0197> = 밥톡.
+- "총 계" 행은 무시.
+
+[카테고리 분류 (items[].category)]
 대장의 소계 행 위치로 판단:
-- "꼬치전문점 소계" 위쪽 상품들 → "꼬치전문점"
+- "꼬치전문점 소계" 위쪽 → "꼬치전문점"
 - "떡볶이 소계" 위쪽 (꼬치전문점 소계 다음부터) → "떡볶이"
 - "주전부리 소계" 위쪽 (떡볶이 소계 다음부터) → "주전부리"
 - "밥톡 소계" 위쪽 (주전부리 소계 다음부터) → "밥톡"
-영수증에만 있고 대장에 없으면 영수증의 소계 코드로 판단 (<0125>=꼬치전문점, <0181>=떡볶이, <0184>=주전부리, <0197>=밥톡).
+영수증에만 있고 대장에 없으면 영수증의 소계 코드로 판단.
 판단 불가능하면 "기타".
 
-상품 매칭 규칙:
-- "[알뜰]감자핫도그"와 "(알뜰간식)감자핫도그"는 같은 상품. 괄호/접두사/가격표기는 무시.
-- "닭꼬치구이4,500", "체다치즈스틱5,500", "고구마스틱 4.5" 등의 가격 부분은 무시.
+[상품 매칭]
+- "[알뜰]감자핫도그"와 "(알뜰간식)감자핫도그"는 같은 상품. 괄호/접두사/가격표기는 무시하고 매칭.
+- "닭꼬치구이4,500", "체다치즈스틱5,500", "고구마스틱 4.5" 등의 가격 부분도 무시하고 매칭.
 - 대장에만 있고 영수증에 없는 상품도 결과에 포함 (판매 0).
 - 영수증에만 있고 대장에 없는 상품도 결과에 포함 (전재고/입고/반품 null).
 
@@ -721,10 +1020,21 @@ JSON만 응답. 코드 펜스, 설명 모두 금지. 스키마:
       "sales_per_receipt": [12, 1, 0],
       "warnings": []
     }
+  ],
+  "ledger_subtotals": {
+    "꼬치전문점": { "previous_stock": 800, "incoming": 1200, "returns": 0 },
+    "떡볶이": { "previous_stock": null, "incoming": null, "returns": null },
+    "주전부리": {},
+    "밥톡": {}
+  },
+  "receipt_subtotals": [
+    { "꼬치전문점": 13, "떡볶이": 3, "주전부리": 5, "밥톡": 2 }
   ]
 }
 
 sales_per_receipt 길이는 정확히 ${receiptCount}. 해당 영수증에 없으면 0.
+receipt_subtotals 길이는 정확히 ${receiptCount}. 영수증에 해당 카테고리가 없으면 null 또는 생략.
+ledger_subtotals의 빈 카테고리는 빈 객체 {} 또는 모든 값 null 가능.
 대장의 상품 순서대로 items 배열에 담고, 대장에 없는 영수증 전용 상품은 맨 끝에 추가.`;
 }
 
@@ -751,7 +1061,9 @@ async function analyze() {
 
   analyzeBtn.disabled = true;
   resultsEl.innerHTML = '';
+  clearOcrView();
   resultsBar.classList.add('hidden');
+  mainTabsEl.classList.add('hidden');
   setStatus('이미지 압축 중...');
 
   try {
@@ -789,7 +1101,6 @@ async function analyze() {
 
     const parsed = parseJsonResponse(text);
 
-    // Build state
     appState.receiptCount = receiptFiles.length;
     appState.items = (parsed.items || []).map(raw => ({
       id: 'i' + (nextId++),
@@ -802,6 +1113,28 @@ async function analyze() {
       warnings: Array.isArray(raw.warnings) ? raw.warnings : [],
     }));
 
+    appState.ledger_subtotals = {};
+    const rawSubs = parsed.ledger_subtotals || {};
+    for (const cat of CATEGORIES) {
+      const s = rawSubs[cat] || {};
+      appState.ledger_subtotals[cat] = {
+        previous_stock: toNumOrNull(s.previous_stock),
+        incoming: toNumOrNull(s.incoming),
+        returns: toNumOrNull(s.returns),
+      };
+    }
+
+    appState.receipt_subtotals = [];
+    const rawReceiptSubs = Array.isArray(parsed.receipt_subtotals) ? parsed.receipt_subtotals : [];
+    for (let i = 0; i < appState.receiptCount; i++) {
+      const r = rawReceiptSubs[i] || {};
+      const entry = {};
+      for (const cat of CATEGORIES) entry[cat] = toNumOrNull(r[cat]);
+      appState.receipt_subtotals.push(entry);
+    }
+
+    currentMainTab = 'summary';
+    currentSubTab = 'ledger';
     undoStack.length = 0;
     updateUndoButton();
     renderResults();
@@ -832,30 +1165,31 @@ function padArray(arr, len) {
 
 analyzeBtn.addEventListener('click', analyze);
 
-// ===== Calculation (pure JavaScript — no AI involved) =====
+// ===== Calculations (pure JS — no AI) =====
 function calcItemSales(item) {
-  // sales = sum of all per-receipt sales (JS arithmetic)
   let s = 0;
-  for (const v of (item.sales_per_receipt || [])) {
-    s += Number(v) || 0;
-  }
+  for (const v of (item.sales_per_receipt || [])) s += Number(v) || 0;
   return s;
 }
 
 function calcItemCurrent(item) {
-  // 현재고 = 전재고 + 입고 - 판매 - 반품 (JS arithmetic)
   if (item.previous_stock === null) return null;
   const prev = Number(item.previous_stock);
   if (isNaN(prev)) return null;
   const inc = Number(item.incoming) || 0;
   const ret = Number(item.returns) || 0;
-  const sales = calcItemSales(item);
-  return prev + inc - sales - ret;
+  return prev + inc - calcItemSales(item) - ret;
+}
+
+function calcItemAmount(item) {
+  const price = getUnitPrice(item);
+  if (price === null) return null;
+  return calcItemSales(item) * price;
 }
 
 function calcGroupTotals(items) {
-  let prev = 0, inc = 0, sales = 0, ret = 0, current = 0;
-  let anyPrev = false, anyCurrent = false;
+  let prev = 0, inc = 0, sales = 0, ret = 0, current = 0, amount = 0;
+  let anyPrev = false, anyCurrent = false, anyAmount = false;
   for (const it of items) {
     if (it.previous_stock !== null && !isNaN(Number(it.previous_stock))) {
       prev += Number(it.previous_stock);
@@ -866,15 +1200,87 @@ function calcGroupTotals(items) {
     sales += calcItemSales(it);
     const c = calcItemCurrent(it);
     if (c !== null) { current += c; anyCurrent = true; }
+    const a = calcItemAmount(it);
+    if (a !== null) { amount += a; anyAmount = true; }
   }
   return {
     prev: anyPrev ? prev : null,
     inc, sales, ret,
     current: anyCurrent ? current : null,
+    amount: anyAmount ? amount : null,
   };
 }
 
-// ===== Rendering =====
+function normalizeName(name) {
+  // 앞쪽 괄호 [알뜰], (알뜰간식), {뭐든} 같은 것 1회 제거.
+  // (대)/(중)/(소) 처럼 사이즈 구분 괄호는 이름 중간/끝에 오므로 유지됨.
+  // 공백·쉼표 제거. 소문자.
+  return String(name || '')
+    .replace(/^\s*[\(\[\{][^\)\]\}]*[\)\]\}]\s*/, '')
+    .replace(/[\s,]+/g, '')
+    .toLowerCase();
+}
+
+function parsePriceFromName(name) {
+  // 이름 끝에 가격이 baked-in 되어 있을 때 추출.
+  // 예: "닭꼬치구이4,500" → 4500, "고구마스틱 4.5" → 4500
+  const s = String(name || '');
+  const m = s.match(/[\d,]+(?:\.\d+)?/g);
+  if (!m) return null;
+  let num = parseFloat(m[m.length - 1].replace(/,/g, ''));
+  if (isNaN(num)) return null;
+  if (num < 100) num *= 1000;     // "4.5" → 4500
+  if (num < 500) return null;     // 가격으로 보기 너무 작음
+  return Math.round(num);
+}
+
+function getUnitPrice(item) {
+  // 1순위: 하드코딩된 UNIT_PRICES
+  const norm = normalizeName(item.ledger_name);
+  if (norm && UNIT_PRICES[norm] !== undefined) return UNIT_PRICES[norm];
+  // 2순위: 이름에 baked-in 가격 파싱
+  return parsePriceFromName(item.ledger_name);
+}
+
+// ===== Subtotal comparison (대장/영수증 OCR값 vs 계산값) =====
+function getLedgerSubtotalMismatches(cat, computed) {
+  const decl = appState.ledger_subtotals && appState.ledger_subtotals[cat];
+  if (!decl) return [];
+  const out = [];
+  const checks = [
+    { label: '전재고', d: decl.previous_stock, c: computed.prev },
+    { label: '입고', d: decl.incoming, c: computed.inc },
+    { label: '반품', d: decl.returns, c: computed.ret },
+  ];
+  for (const ch of checks) {
+    if (ch.d === null || ch.d === undefined) continue;
+    const cVal = ch.c === null || ch.c === undefined ? 0 : Number(ch.c);
+    if (Number(ch.d) !== cVal) {
+      out.push(`${ch.label} 대장:${ch.d} ↔ 계산:${cVal}`);
+    }
+  }
+  return out;
+}
+
+function getReceiptSubtotalMismatches(receiptIdx) {
+  const decl = appState.receipt_subtotals && appState.receipt_subtotals[receiptIdx];
+  if (!decl) return [];
+  const out = [];
+  for (const cat of CATEGORIES) {
+    const declared = decl[cat];
+    if (declared === null || declared === undefined) continue;
+    let computed = 0;
+    for (const it of appState.items) {
+      if (it.category === cat) computed += Number(it.sales_per_receipt[receiptIdx]) || 0;
+    }
+    if (Number(declared) !== computed) {
+      out.push(`${cat} 영수증:${declared} ↔ 계산:${computed}`);
+    }
+  }
+  return out;
+}
+
+// ===== Format helpers =====
 function escHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -882,17 +1288,23 @@ function escHtml(s) {
 }
 function escAttr(s) { return escHtml(s); }
 function valOrEmpty(v) { return v === null || v === undefined ? '' : String(v); }
-function dispNum(v) { return v === null ? '−' : String(v); }
+function dispNum(v) { return v === null || v === undefined ? '−' : String(v); }
+function fmtMoney(n) {
+  if (n === null || n === undefined) return '−';
+  return Number(n).toLocaleString('ko-KR');
+}
 
+// ===== Rendering (정리 view) =====
 function renderResults() {
   resultsEl.innerHTML = '';
 
   if (appState.items.length === 0) {
     resultsBar.classList.add('hidden');
+    mainTabsEl.classList.add('hidden');
+    clearOcrView();
     return;
   }
 
-  // Group items by category, preserve original order within each category
   const groups = {};
   for (const cat of CATEGORIES) groups[cat] = [];
   for (const item of appState.items) {
@@ -908,16 +1320,16 @@ function renderResults() {
 
   for (const cat of CATEGORIES) {
     if (groups[cat].length === 0) continue;
-    const catEl = renderCategory(cat, groups[cat]);
-    resultsEl.appendChild(catEl);
+    resultsEl.appendChild(renderCategory(cat, groups[cat]));
   }
-
-  // Grand total
-  const gt = renderGrandTotal();
-  resultsEl.appendChild(gt);
+  resultsEl.appendChild(renderGrandTotal());
 
   resultsSummary.textContent = `총 ${appState.items.length}개 · 계산 ${calculated}개${warned > 0 ? ` · ⚠️ ${warned}개` : ''}`;
   resultsBar.classList.remove('hidden');
+  mainTabsEl.classList.remove('hidden');
+
+  renderOcrView();
+  applyMainTab();
 }
 
 function renderCategory(cat, items) {
@@ -935,14 +1347,8 @@ function renderCategory(cat, items) {
 
   const body = document.createElement('div');
   body.className = 'category-body';
-
-  for (const item of items) {
-    body.appendChild(renderItem(item));
-  }
-
-  // Subtotal
+  for (const item of items) body.appendChild(renderItem(item));
   body.appendChild(renderSubtotal(cat, items));
-
   catEl.appendChild(body);
   return catEl;
 }
@@ -953,6 +1359,8 @@ function renderItem(item) {
   card.dataset.id = item.id;
   const current = calcItemCurrent(item);
   const sales = calcItemSales(item);
+  const price = getUnitPrice(item);
+  const amount = calcItemAmount(item);
   if (current === null) card.classList.add('no-prev');
   if ((item.warnings || []).length > 0) card.classList.add('warn');
 
@@ -991,6 +1399,11 @@ function renderItem(item) {
       </div>
       <div class="current" data-id="${item.id}" data-target="current">${dispNum(current)}</div>
     </div>
+    <div class="amount-row${price === null ? ' no-price' : ''}" data-id="${item.id}" data-target="amount-row">
+      <span class="amount-label">금액</span>
+      <span class="amount-formula" data-id="${item.id}" data-target="amount-formula">${escHtml(amountFormula(item))}</span>
+      <span class="amount-value" data-id="${item.id}" data-target="amount-value">${fmtMoney(amount)}</span>
+    </div>
     ${(item.warnings || []).map(w => `<div class="warning">⚠️ ${escHtml(w)}</div>`).join('')}
   `;
   return card;
@@ -1002,8 +1415,16 @@ function formulaText(item) {
   return `${item.previous_stock ?? 0} + ${item.incoming ?? 0} − ${sales} − ${item.returns ?? 0}`;
 }
 
+function amountFormula(item) {
+  const price = getUnitPrice(item);
+  const sales = calcItemSales(item);
+  if (price === null) return '단가 없음 (UNIT_PRICES에 추가하세요)';
+  return `단가 ${fmtMoney(price)} × 판매 ${sales}`;
+}
+
 function renderSubtotal(cat, items) {
   const t = calcGroupTotals(items);
+  const mismatches = getLedgerSubtotalMismatches(cat, t);
   const el = document.createElement('div');
   el.className = 'subtotal';
   el.dataset.subtotalCat = cat;
@@ -1014,7 +1435,13 @@ function renderSubtotal(cat, items) {
       <div class="scell"><div class="slabel">입고</div><div class="sval" data-target="sub-inc">${t.inc}</div></div>
       <div class="scell"><div class="slabel">판매</div><div class="sval" data-target="sub-sales">${t.sales}</div></div>
       <div class="scell"><div class="slabel">반품</div><div class="sval" data-target="sub-ret">${t.ret}</div></div>
+    </div>
+    <div class="sgrid-bottom">
       <div class="scell current"><div class="slabel">현재고</div><div class="sval" data-target="sub-current">${dispNum(t.current)}</div></div>
+      <div class="scell amount"><div class="slabel">금액</div><div class="sval" data-target="sub-amount">${fmtMoney(t.amount)}</div></div>
+    </div>
+    <div class="mismatch-warning${mismatches.length === 0 ? ' hidden' : ''}" data-target="sub-mismatch">
+      ⚠️ <strong>대장 소계와 차이</strong>: ${escHtml(mismatches.join(' · '))}
     </div>
   `;
   return el;
@@ -1032,31 +1459,247 @@ function renderGrandTotal() {
       <div class="gcell"><div class="glabel">입고</div><div class="gval" data-target="gt-inc">${t.inc}</div></div>
       <div class="gcell"><div class="glabel">판매</div><div class="gval" data-target="gt-sales">${t.sales}</div></div>
       <div class="gcell"><div class="glabel">반품</div><div class="gval" data-target="gt-ret">${t.ret}</div></div>
+    </div>
+    <div class="ggrid-bottom">
       <div class="gcell current"><div class="glabel">현재고</div><div class="gval" data-target="gt-current">${dispNum(t.current)}</div></div>
+      <div class="gcell amount"><div class="glabel">금액</div><div class="gval" data-target="gt-amount">${fmtMoney(t.amount)}</div></div>
     </div>
   `;
   return el;
 }
 
-// ===== Edit handlers =====
-// On focus: capture state snapshot before the edit
-resultsEl.addEventListener('focusin', e => {
-  if (e.target.matches('input.num-input')) {
-    preEditSnapshot = snapshotItems();
+// ===== Rendering (OCR 검증 view) =====
+function renderOcrView() {
+  for (const u of activeOcrObjectUrls) URL.revokeObjectURL(u);
+  activeOcrObjectUrls = [];
+  ocrResultsEl.innerHTML = '';
+
+  if (appState.items.length === 0) {
+    ocrResultsEl.classList.add('hidden');
+    return;
   }
-});
-// On blur: if state actually changed, push the pre-edit snapshot to undo stack
-resultsEl.addEventListener('focusout', e => {
-  if (e.target.matches('input.num-input') && preEditSnapshot != null) {
-    const now = snapshotItems();
-    if (now !== preEditSnapshot) {
-      pushUndo(preEditSnapshot);
+
+  const valid = ['ledger', ...Array.from({length: appState.receiptCount}, (_, i) => `receipt-${i}`)];
+  if (!valid.includes(currentSubTab)) currentSubTab = 'ledger';
+
+  const nav = document.createElement('div');
+  nav.className = 'sub-tabs';
+  let navHtml = `<button class="sub-tab ${currentSubTab === 'ledger' ? 'active' : ''}" data-sub="ledger" type="button">대장</button>`;
+  for (let i = 0; i < appState.receiptCount; i++) {
+    const sub = `receipt-${i}`;
+    navHtml += `<button class="sub-tab ${currentSubTab === sub ? 'active' : ''}" data-sub="${sub}" type="button">영수증${i+1}</button>`;
+  }
+  nav.innerHTML = navHtml;
+  ocrResultsEl.appendChild(nav);
+
+  ocrResultsEl.appendChild(renderOcrLedgerPane());
+  for (let i = 0; i < appState.receiptCount; i++) {
+    ocrResultsEl.appendChild(renderOcrReceiptPane(i));
+  }
+}
+
+function renderOcrLedgerPane() {
+  const pane = document.createElement('div');
+  pane.className = `ocr-pane ${currentSubTab === 'ledger' ? 'active' : ''}`;
+  pane.dataset.subPane = 'ledger';
+
+  const imgs = document.createElement('div');
+  imgs.className = 'ocr-images';
+  if (ledgerFiles.length === 0) {
+    imgs.innerHTML = `<div class="ocr-hint">대장 사진이 없습니다.</div>`;
+  } else {
+    for (const f of ledgerFiles) {
+      const img = document.createElement('img');
+      const url = URL.createObjectURL(f);
+      activeOcrObjectUrls.push(url);
+      img.src = url;
+      img.addEventListener('click', () => openImage(url));
+      imgs.appendChild(img);
     }
-    preEditSnapshot = null;
   }
+  pane.appendChild(imgs);
+
+  const hint = document.createElement('div');
+  hint.className = 'ocr-hint';
+  hint.textContent = '사진을 누르면 크게 볼 수 있어요. 숫자는 그 자리에서 수정 가능합니다.';
+  pane.appendChild(hint);
+
+  const tbl = document.createElement('div');
+  tbl.className = 'ocr-table';
+  const thead = document.createElement('div');
+  thead.className = 'ocr-thead cols-ledger';
+  thead.innerHTML = `<span>상품명</span><span>전재고</span><span>입고</span><span>반품</span>`;
+  tbl.appendChild(thead);
+
+  const groups = {};
+  for (const cat of CATEGORIES) groups[cat] = [];
+  for (const item of appState.items) {
+    const cat = CATEGORIES.includes(item.category) ? item.category : '기타';
+    groups[cat].push(item);
+  }
+  for (const cat of CATEGORIES) {
+    if (groups[cat].length === 0) continue;
+    const div = document.createElement('div');
+    div.className = 'ocr-cat-divider';
+    div.textContent = cat;
+    tbl.appendChild(div);
+    for (const item of groups[cat]) tbl.appendChild(renderOcrLedgerRow(item));
+
+    const t = calcGroupTotals(groups[cat]);
+    const mismatches = getLedgerSubtotalMismatches(cat, t);
+    const warn = document.createElement('div');
+    warn.className = `mismatch-warning${mismatches.length === 0 ? ' hidden' : ''}`;
+    warn.dataset.ocrLedgerCat = cat;
+    warn.innerHTML = `⚠️ <strong>${escHtml(cat)} 소계 ≠ 계산값</strong>: ${escHtml(mismatches.join(' · '))}`;
+    tbl.appendChild(warn);
+  }
+  pane.appendChild(tbl);
+  return pane;
+}
+
+function renderOcrLedgerRow(item) {
+  const row = document.createElement('div');
+  row.className = 'ocr-row cols-ledger' + ((item.warnings || []).length > 0 ? ' warn' : '');
+  row.dataset.id = item.id;
+  row.innerHTML = `
+    <div class="ocr-name">${escHtml(item.ledger_name || '(이름 없음)')}</div>
+    <input type="number" inputmode="numeric" class="num-input" data-id="${item.id}" data-field="previous_stock" value="${valOrEmpty(item.previous_stock)}" placeholder="−">
+    <input type="number" inputmode="numeric" class="num-input" data-id="${item.id}" data-field="incoming" value="${valOrEmpty(item.incoming)}" placeholder="0">
+    <input type="number" inputmode="numeric" class="num-input" data-id="${item.id}" data-field="returns" value="${valOrEmpty(item.returns)}" placeholder="0">
+    ${(item.warnings || []).length > 0 ? `<div class="ocr-warning">⚠️ ${escHtml(item.warnings.join(', '))}</div>` : ''}
+  `;
+  return row;
+}
+
+function renderOcrReceiptPane(idx) {
+  const pane = document.createElement('div');
+  pane.className = `ocr-pane ${currentSubTab === `receipt-${idx}` ? 'active' : ''}`;
+  pane.dataset.subPane = `receipt-${idx}`;
+
+  const imgs = document.createElement('div');
+  imgs.className = 'ocr-images';
+  const file = receiptFiles[idx];
+  if (file) {
+    const img = document.createElement('img');
+    const url = URL.createObjectURL(file);
+    activeOcrObjectUrls.push(url);
+    img.src = url;
+    img.addEventListener('click', () => openImage(url));
+    imgs.appendChild(img);
+  } else {
+    imgs.innerHTML = `<div class="ocr-hint">영수증 사진이 없습니다.</div>`;
+  }
+  pane.appendChild(imgs);
+
+  const hint = document.createElement('div');
+  hint.className = 'ocr-hint';
+  hint.textContent = `영수증 ${idx+1}에서 인식된 판매 항목입니다. 누락된 항목은 "정리" 탭에서 추가해주세요.`;
+  pane.appendChild(hint);
+
+  const mismatches = getReceiptSubtotalMismatches(idx);
+  const warn = document.createElement('div');
+  warn.className = `mismatch-warning${mismatches.length === 0 ? ' hidden' : ''}`;
+  warn.dataset.ocrReceiptIdx = idx;
+  warn.innerHTML = `⚠️ <strong>영수증 소계 ≠ 계산값</strong>: ${escHtml(mismatches.join(' · '))}`;
+  pane.appendChild(warn);
+
+  const items = appState.items.filter(it => (it.sales_per_receipt[idx] || 0) > 0);
+  if (items.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'ocr-empty';
+    empty.textContent = '이 영수증에서 인식된 항목이 없습니다.';
+    pane.appendChild(empty);
+    return pane;
+  }
+
+  const tbl = document.createElement('div');
+  tbl.className = 'ocr-table';
+  const thead = document.createElement('div');
+  thead.className = 'ocr-thead cols-receipt';
+  thead.innerHTML = `<span>상품명</span><span>판매수량</span>`;
+  tbl.appendChild(thead);
+
+  const groups = {};
+  for (const cat of CATEGORIES) groups[cat] = [];
+  for (const item of items) {
+    const cat = CATEGORIES.includes(item.category) ? item.category : '기타';
+    groups[cat].push(item);
+  }
+  for (const cat of CATEGORIES) {
+    if (groups[cat].length === 0) continue;
+    const div = document.createElement('div');
+    div.className = 'ocr-cat-divider';
+    div.textContent = cat;
+    tbl.appendChild(div);
+    for (const item of groups[cat]) {
+      const row = document.createElement('div');
+      row.className = 'ocr-row cols-receipt';
+      row.dataset.id = item.id;
+      row.innerHTML = `
+        <div class="ocr-name">${escHtml(item.ledger_name || '(이름 없음)')}</div>
+        <input type="number" inputmode="numeric" class="num-input" data-id="${item.id}" data-field="sales" data-receipt="${idx}" value="${item.sales_per_receipt[idx]}" placeholder="0">
+      `;
+      tbl.appendChild(row);
+    }
+  }
+  pane.appendChild(tbl);
+  return pane;
+}
+
+// ===== Tabs =====
+function applyMainTab() {
+  document.querySelectorAll('.main-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === currentMainTab);
+  });
+  if (currentMainTab === 'summary') {
+    resultsEl.classList.remove('hidden');
+    ocrResultsEl.classList.add('hidden');
+  } else {
+    resultsEl.classList.add('hidden');
+    ocrResultsEl.classList.remove('hidden');
+  }
+}
+
+function applySubTab() {
+  ocrResultsEl.querySelectorAll('.sub-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.sub === currentSubTab);
+  });
+  ocrResultsEl.querySelectorAll('.ocr-pane').forEach(p => {
+    p.classList.toggle('active', p.dataset.subPane === currentSubTab);
+  });
+}
+
+mainTabsEl.addEventListener('click', e => {
+  const t = e.target.closest('.main-tab');
+  if (!t) return;
+  currentMainTab = t.dataset.tab;
+  applyMainTab();
 });
 
-resultsEl.addEventListener('input', e => {
+// ===== Image modal =====
+function openImage(src) {
+  imageModalImg.src = src;
+  imageModal.classList.remove('hidden');
+}
+imageModal.addEventListener('click', () => {
+  imageModal.classList.add('hidden');
+  imageModalImg.src = '';
+});
+
+// ===== Shared edit handlers (정리 + OCR) =====
+function handleFocusIn(e) {
+  if (e.target.matches('input.num-input')) {
+    preEditSnapshot = snapshotState();
+  }
+}
+function handleFocusOut(e) {
+  if (e.target.matches('input.num-input') && preEditSnapshot != null) {
+    const now = snapshotState();
+    if (now !== preEditSnapshot) pushUndo(preEditSnapshot);
+    preEditSnapshot = null;
+  }
+}
+function handleInput(e) {
   const t = e.target;
   if (!t.matches('input.num-input')) return;
   const id = t.dataset.id;
@@ -1069,14 +1712,42 @@ resultsEl.addEventListener('input', e => {
     const v = t.value === '' ? 0 : Number(t.value);
     item.sales_per_receipt[ri] = isNaN(v) ? 0 : v;
   } else {
-    // previous_stock, incoming, returns
     item[field] = t.value === '' ? null : Number(t.value);
     if (isNaN(item[field])) item[field] = null;
   }
 
+  syncInputs(id, field, t.dataset.receipt, t);
   refreshDerived();
-});
+}
 
+function syncInputs(itemId, field, receipt, sourceInput) {
+  // 같은 state 필드를 가리키는 다른 view의 input을 갱신 (포커스된 input 제외)
+  let selector;
+  if (field === 'sales') {
+    selector = `input[data-id="${itemId}"][data-field="sales"][data-receipt="${receipt}"]`;
+  } else {
+    selector = `input[data-id="${itemId}"][data-field="${field}"]`;
+  }
+  const item = appState.items.find(i => i.id === itemId);
+  if (!item) return;
+  let v;
+  if (field === 'sales') v = item.sales_per_receipt[Number(receipt)];
+  else v = item[field];
+  const displayValue = v === null || v === undefined ? '' : String(v);
+  document.querySelectorAll(selector).forEach(inp => {
+    if (inp === sourceInput) return;
+    inp.value = displayValue;
+  });
+}
+
+resultsEl.addEventListener('focusin', handleFocusIn);
+resultsEl.addEventListener('focusout', handleFocusOut);
+resultsEl.addEventListener('input', handleInput);
+ocrResultsEl.addEventListener('focusin', handleFocusIn);
+ocrResultsEl.addEventListener('focusout', handleFocusOut);
+ocrResultsEl.addEventListener('input', handleInput);
+
+// 항목 추가/삭제는 정리 view에서만
 resultsEl.addEventListener('click', e => {
   const t = e.target;
   if (t.matches('.del-btn')) {
@@ -1106,42 +1777,83 @@ resultsEl.addEventListener('click', e => {
   }
 });
 
-// Update only derived values (don't touch inputs to preserve focus)
+// 서브 탭 클릭
+ocrResultsEl.addEventListener('click', e => {
+  const st = e.target.closest('.sub-tab');
+  if (!st) return;
+  currentSubTab = st.dataset.sub;
+  applySubTab();
+});
+
+// ===== Derived value updates (no DOM rebuild) =====
 function refreshDerived() {
-  // Items
+  // 1. 각 상품 카드의 sales sum, 현재고, 금액
   for (const item of appState.items) {
     const sales = calcItemSales(item);
     const current = calcItemCurrent(item);
+    const amount = calcItemAmount(item);
+    const price = getUnitPrice(item);
+
     const card = resultsEl.querySelector(`.item-card[data-id="${item.id}"]`);
-    if (!card) continue;
-    const sumEl = card.querySelector(`[data-target="sales-sum"]`);
-    if (sumEl) sumEl.textContent = sales;
-    const curEl = card.querySelector(`[data-target="current"]`);
-    if (curEl) curEl.textContent = dispNum(current);
-    const fEl = card.querySelector(`[data-target="formula"]`);
-    if (fEl) fEl.textContent = formulaText(item);
-    card.classList.toggle('no-prev', current === null);
+    if (card) {
+      const sumEl = card.querySelector(`[data-target="sales-sum"]`);
+      if (sumEl) sumEl.textContent = sales;
+      const curEl = card.querySelector(`[data-target="current"]`);
+      if (curEl) curEl.textContent = dispNum(current);
+      const fEl = card.querySelector(`[data-target="formula"]`);
+      if (fEl) fEl.textContent = formulaText(item);
+      card.classList.toggle('no-prev', current === null);
+      const amtFormulaEl = card.querySelector(`[data-target="amount-formula"]`);
+      if (amtFormulaEl) amtFormulaEl.textContent = amountFormula(item);
+      const amtValEl = card.querySelector(`[data-target="amount-value"]`);
+      if (amtValEl) amtValEl.textContent = fmtMoney(amount);
+      const amtRow = card.querySelector(`[data-target="amount-row"]`);
+      if (amtRow) amtRow.classList.toggle('no-price', price === null);
+    }
   }
 
-  // Subtotals
+  // 2. 카테고리별 그룹
   const groups = {};
   for (const cat of CATEGORIES) groups[cat] = [];
   for (const item of appState.items) {
     const cat = CATEGORIES.includes(item.category) ? item.category : '기타';
     groups[cat].push(item);
   }
+
+  // 3. 소계 (정리 view) + 대장 mismatch 경고 (정리 + OCR 양쪽)
   for (const cat of CATEGORIES) {
-    const subEl = resultsEl.querySelector(`.subtotal[data-subtotal-cat="${cat}"]`);
-    if (!subEl) continue;
     const t = calcGroupTotals(groups[cat]);
-    subEl.querySelector('[data-target="sub-prev"]').textContent = dispNum(t.prev);
-    subEl.querySelector('[data-target="sub-inc"]').textContent = t.inc;
-    subEl.querySelector('[data-target="sub-sales"]').textContent = t.sales;
-    subEl.querySelector('[data-target="sub-ret"]').textContent = t.ret;
-    subEl.querySelector('[data-target="sub-current"]').textContent = dispNum(t.current);
+    const mismatches = getLedgerSubtotalMismatches(cat, t);
+
+    const subEl = resultsEl.querySelector(`.subtotal[data-subtotal-cat="${cat}"]`);
+    if (subEl) {
+      subEl.querySelector('[data-target="sub-prev"]').textContent = dispNum(t.prev);
+      subEl.querySelector('[data-target="sub-inc"]').textContent = t.inc;
+      subEl.querySelector('[data-target="sub-sales"]').textContent = t.sales;
+      subEl.querySelector('[data-target="sub-ret"]').textContent = t.ret;
+      subEl.querySelector('[data-target="sub-current"]').textContent = dispNum(t.current);
+      subEl.querySelector('[data-target="sub-amount"]').textContent = fmtMoney(t.amount);
+      const m = subEl.querySelector('[data-target="sub-mismatch"]');
+      if (m) {
+        if (mismatches.length === 0) m.classList.add('hidden');
+        else {
+          m.classList.remove('hidden');
+          m.innerHTML = `⚠️ <strong>대장 소계와 차이</strong>: ${escHtml(mismatches.join(' · '))}`;
+        }
+      }
+    }
+
+    const ocrWarn = ocrResultsEl.querySelector(`.mismatch-warning[data-ocr-ledger-cat="${cat}"]`);
+    if (ocrWarn) {
+      if (mismatches.length === 0) ocrWarn.classList.add('hidden');
+      else {
+        ocrWarn.classList.remove('hidden');
+        ocrWarn.innerHTML = `⚠️ <strong>${escHtml(cat)} 소계 ≠ 계산값</strong>: ${escHtml(mismatches.join(' · '))}`;
+      }
+    }
   }
 
-  // Grand total
+  // 4. 전체 합계
   const gt = document.getElementById('grandTotal');
   if (gt) {
     const t = calcGroupTotals(appState.items);
@@ -1150,6 +1862,20 @@ function refreshDerived() {
     gt.querySelector('[data-target="gt-sales"]').textContent = t.sales;
     gt.querySelector('[data-target="gt-ret"]').textContent = t.ret;
     gt.querySelector('[data-target="gt-current"]').textContent = dispNum(t.current);
+    gt.querySelector('[data-target="gt-amount"]').textContent = fmtMoney(t.amount);
+  }
+
+  // 5. 영수증 mismatch 경고 (OCR view)
+  for (let i = 0; i < appState.receiptCount; i++) {
+    const mismatches = getReceiptSubtotalMismatches(i);
+    const warnEl = ocrResultsEl.querySelector(`.mismatch-warning[data-ocr-receipt-idx="${i}"]`);
+    if (warnEl) {
+      if (mismatches.length === 0) warnEl.classList.add('hidden');
+      else {
+        warnEl.classList.remove('hidden');
+        warnEl.innerHTML = `⚠️ <strong>영수증 소계 ≠ 계산값</strong>: ${escHtml(mismatches.join(' · '))}`;
+      }
+    }
   }
 }
 </script>
