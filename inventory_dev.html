@@ -1014,25 +1014,45 @@ function updateUndoButton() {
 undoBtn.addEventListener('click', performUndo);
 
 // ===== Image processing =====
-// <img>를 우선 사용 (가장 호환성 좋음, 대부분 JPG/PNG는 여기서 처리됨).
-// 실패하면 createImageBitmap 폴백 (HEIC 일부 지원).
-async function decodeImageElement(file) {
-  try {
-    return await new Promise((resolve, reject) => {
+// 한 가지 디코더가 실패해도 다음 방법을 시도. 모바일 Chrome이 큰 JPG에서
+// blob URL 로드 실패하는 경우 등에 대비.
+function _decodeViaImgBlob(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => resolve(img);
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('blob URL 로드 실패')); };
+    img.src = url;
+  });
+}
+function _decodeViaDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
       const img = new Image();
-      const url = URL.createObjectURL(file);
       img.onload = () => resolve(img);
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img decode failed')); };
-      img.src = url;
-    });
-  } catch (e) {
-    if (typeof createImageBitmap === 'function') {
-      try {
-        return await createImageBitmap(file);
-      } catch (e2) { /* 둘 다 실패 */ }
-    }
-    throw new Error('decode failed');
+      img.onerror = () => reject(new Error('DataURL 로드 실패'));
+      img.src = r.result;
+    };
+    r.onerror = () => reject(new Error('FileReader 오류'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function decodeImageElement(file) {
+  const errors = [];
+  // A: <img> + blob URL (가장 호환성 좋음)
+  try { return await _decodeViaImgBlob(file); }
+  catch (e) { errors.push('A:' + e.message); }
+  // B: createImageBitmap (대용량/HEIC 일부 지원)
+  if (typeof createImageBitmap === 'function') {
+    try { return await createImageBitmap(file); }
+    catch (e) { errors.push('B:' + e.message); }
   }
+  // C: FileReader → DataURL → <img> (blob URL 이 어떤 이유로 실패한 케이스 대응)
+  try { return await _decodeViaDataUrl(file); }
+  catch (e) { errors.push('C:' + e.message); }
+  throw new Error(errors.join(' | '));
 }
 
 async function fileToResizedB64(file, maxDim = 2000, quality = 0.85) {
@@ -1040,7 +1060,9 @@ async function fileToResizedB64(file, maxDim = 2000, quality = 0.85) {
   try {
     source = await decodeImageElement(file);
   } catch (e) {
-    throw new Error(`"${file.name || '사진'}"을(를) 읽을 수 없습니다. HEIC/HEIF 같은 미지원 형식이거나 손상된 파일일 가능성. 폰 카메라 설정에서 JPG로 저장하도록 바꾸거나, 갤러리에서 JPG로 다시 저장해서 올려주세요.`);
+    const sizeMB = file.size ? ` ${(file.size / 1024 / 1024).toFixed(1)}MB` : '';
+    const typeStr = file.type || '형식?';
+    throw new Error(`"${file.name || '사진'}" (${typeStr}${sizeMB}) 디코드 실패. [${e.message}]`);
   }
   let width = source.width;
   let height = source.height;
