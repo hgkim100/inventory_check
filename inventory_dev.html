@@ -106,6 +106,14 @@
     line-height: 22px; text-align: center;
     cursor: pointer; border: 2px solid white;
   }
+  .preview-item .ph {
+    width: 64px; height: 64px;
+    border-radius: 8px; border: 1px dashed #c7c7cc;
+    background: #f2f2f7; color: #8e8e93;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 9px; line-height: 1.1; text-align: center; padding: 2px;
+  }
+  .preview-item .ph .ph-icon { font-size: 18px; line-height: 1; }
   button.primary {
     width: 100%; background: #007aff; color: white;
     border: none; padding: 14px; border-radius: 12px;
@@ -468,6 +476,16 @@
     border-radius: 10px;
     cursor: zoom-in;
   }
+  .ocr-images .ocr-ph {
+    width: 100%; height: 120px;
+    border-radius: 10px;
+    background: #f2f2f7; border: 1px dashed #c7c7cc;
+    color: #6e6e73;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; font-size: 13px; text-align: center; padding: 8px;
+  }
+  .ocr-images .ocr-ph .ocr-ph-icon { font-size: 28px; line-height: 1; }
+  .ocr-images .ocr-ph small { font-size: 11px; color: #8e8e93; }
   .ocr-hint {
     font-size: 12px;
     color: #8e8e93;
@@ -637,6 +655,9 @@
     <h1>매장 재고 자동 계산 <span style="font-size:11px; font-weight:600; color:#fff; background:#ff3b30; padding:2px 6px; border-radius:4px; vertical-align:middle; margin-left:4px;">DEV</span></h1>
     <button class="icon-btn" id="settingsBtn" title="설정">⚙️</button>
   </header>
+  <div id="versionBar" style="text-align:center; font-size:11px; color:#8e8e93; margin:-4px 0 8px;">
+    v2026-05-17.b · 원본 그대로 OCR 전송 (디코드/리사이즈 제거)
+  </div>
 
   <div class="panel hidden" id="settingsPanel">
     <h2>설정</h2>
@@ -884,7 +905,19 @@ function renderPreview(files, hashes, container, box) {
     const wrap = document.createElement('div');
     wrap.className = 'preview-item';
     const img = document.createElement('img');
-    img.src = URL.createObjectURL(f);
+    const url = URL.createObjectURL(f);
+    img.src = url;
+    // 브라우저가 디코드 못하는 포맷(HEIC 등)이면 placeholder로 교체.
+    // OCR은 분석 단계에서 원본 그대로 Gemini에 전송됨.
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      img.remove();
+      const ph = document.createElement('div');
+      ph.className = 'ph';
+      ph.title = `${f.name || '사진'} — 브라우저가 미리보기를 만들 수 없는 형식 (OCR은 정상 진행)`;
+      ph.innerHTML = '<div class="ph-icon">🖼️</div><div>미리보기<br>불가</div>';
+      wrap.insertBefore(ph, wrap.firstChild);
+    };
     const del = document.createElement('div');
     del.className = 'del';
     del.textContent = '×';
@@ -1014,70 +1047,83 @@ function updateUndoButton() {
 undoBtn.addEventListener('click', performUndo);
 
 // ===== Image processing =====
-// 한 가지 디코더가 실패해도 다음 방법을 시도. 모바일 Chrome이 큰 JPG에서
-// blob URL 로드 실패하는 경우 등에 대비.
-function _decodeViaImgBlob(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => resolve(img);
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('blob URL 로드 실패')); };
-    img.src = url;
-  });
-}
-function _decodeViaDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('DataURL 로드 실패'));
-      img.src = r.result;
-    };
-    r.onerror = () => reject(new Error('FileReader 오류'));
-    r.readAsDataURL(file);
-  });
-}
+// 디코드/리사이즈는 하지 않는다. 모바일 브라우저(Samsung Internet, Z Flip Chrome 등)
+// 에서 정상 JPG 도 캔버스 디코드가 실패하는 경우가 있어, 원본을 그대로
+// Gemini 로 보내는 게 가장 안정적이다. 트래픽은 늘지만 OCR 신뢰성이 우선.
 
-async function decodeImageElement(file) {
-  const errors = [];
-  // A: <img> + blob URL (가장 호환성 좋음)
-  try { return await _decodeViaImgBlob(file); }
-  catch (e) { errors.push('A:' + e.message); }
-  // B: createImageBitmap (대용량/HEIC 일부 지원)
-  if (typeof createImageBitmap === 'function') {
-    try { return await createImageBitmap(file); }
-    catch (e) { errors.push('B:' + e.message); }
-  }
-  // C: FileReader → DataURL → <img> (blob URL 이 어떤 이유로 실패한 케이스 대응)
-  try { return await _decodeViaDataUrl(file); }
-  catch (e) { errors.push('C:' + e.message); }
-  throw new Error(errors.join(' | '));
-}
-
-async function fileToResizedB64(file, maxDim = 2000, quality = 0.85) {
-  let source;
+// 파일 시작 바이트로 실제 포맷 식별. 확장자(.jpg)와 실제 포맷이 다른 경우
+// (예: HEIC가 .jpg로 저장된 경우) 정확한 MIME 을 잡아주기 위함.
+async function detectFileFormat(file) {
   try {
-    source = await decodeImageElement(file);
+    const buf = await file.slice(0, 16).arrayBuffer();
+    const arr = new Uint8Array(buf);
+    if (arr[0] === 0xFF && arr[1] === 0xD8 && arr[2] === 0xFF) return 'JPEG';
+    if (arr[0] === 0x89 && arr[1] === 0x50 && arr[2] === 0x4E && arr[3] === 0x47) return 'PNG';
+    if (arr[0] === 0x47 && arr[1] === 0x49 && arr[2] === 0x46) return 'GIF';
+    if (arr[0] === 0x52 && arr[1] === 0x49 && arr[2] === 0x46 && arr[3] === 0x46
+        && arr[8] === 0x57 && arr[9] === 0x45 && arr[10] === 0x42 && arr[11] === 0x50) return 'WebP';
+    if (arr[4] === 0x66 && arr[5] === 0x74 && arr[6] === 0x79 && arr[7] === 0x70) {
+      const brand = String.fromCharCode(arr[8], arr[9], arr[10], arr[11]);
+      if (/^(heic|heix|hevc|hevx|heim|heis|heif|mif1|msf1)$/.test(brand)) return 'HEIF/HEIC(' + brand + ')';
+      if (/^(avif|avis)$/.test(brand)) return 'AVIF(' + brand + ')';
+      return 'ISO-BMFF(' + brand + ')';
+    }
+    const hex = Array.from(arr.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return 'unknown(' + hex + ')';
   } catch (e) {
-    const sizeMB = file.size ? ` ${(file.size / 1024 / 1024).toFixed(1)}MB` : '';
-    const typeStr = file.type || '형식?';
-    throw new Error(`"${file.name || '사진'}" (${typeStr}${sizeMB}) 디코드 실패. [${e.message}]`);
+    return 'detect-error:' + e.message;
   }
-  let width = source.width;
-  let height = source.height;
-  const scale = Math.min(1, maxDim / Math.max(width, height));
-  width = Math.round(width * scale);
-  height = Math.round(height * scale);
-  const canvas = document.createElement('canvas');
-  canvas.width = width; canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, width, height);
-  ctx.drawImage(source, 0, 0, width, height);
-  if (source.close) source.close();
-  if (source.src && source.src.startsWith('blob:')) URL.revokeObjectURL(source.src);
-  return canvas.toDataURL('image/jpeg', quality).split(',')[1];
+}
+
+// 매직 바이트 + 선언 MIME 으로 Gemini 에 보낼 MIME 결정.
+// Gemini 는 image/jpeg, image/png, image/webp, image/heic, image/heif 지원.
+function detectedToMime(detected, declaredType) {
+  if (declaredType && /^image\//.test(declaredType) && declaredType !== 'image/*') return declaredType;
+  if (detected === 'JPEG') return 'image/jpeg';
+  if (detected === 'PNG') return 'image/png';
+  if (detected === 'GIF') return 'image/gif';
+  if (detected === 'WebP') return 'image/webp';
+  if (detected.startsWith('HEIF/HEIC')) return 'image/heic';
+  if (detected.startsWith('AVIF')) return 'image/avif';
+  return 'image/jpeg';
+}
+
+// 파일을 base64 로 변환. ArrayBuffer 우선(가장 호환성 좋음), 실패시 DataURL.
+async function fileToRawB64(file) {
+  // 1) ArrayBuffer → btoa (큰 파일은 청크로)
+  try {
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    const CHUNK = 0x8000;
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+    }
+    return btoa(bin);
+  } catch (e1) {
+    // 2) FileReader DataURL fallback
+    return await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const result = r.result || '';
+        const comma = result.indexOf(',');
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      r.onerror = () => reject(new Error('파일 읽기 실패: ' + (r.error && (r.error.message || r.error.name) || 'unknown') + ` / 1차: ${e1.message}`));
+      r.readAsDataURL(file);
+    });
+  }
+}
+
+// 디코드/리사이즈 시도 안 함. 원본 파일을 그대로 base64 로 인코딩해 Gemini 에 전송.
+// (기존: 캔버스로 리사이즈 → 모바일 브라우저에서 디코드 실패하는 케이스가 있어 OCR 자체가 막힘.
+//  단순화: 항상 원본 그대로. 트래픽은 조금 늘지만 안정성이 훨씬 좋다.)
+async function fileToResizedB64(file, _maxDim, _quality) {
+  let detected = 'unknown';
+  try { detected = await detectFileFormat(file); } catch {}
+  const mimeType = detectedToMime(detected, file.type);
+  const data = await fileToRawB64(file);
+  return { data, mimeType, resized: false, detected };
 }
 
 // ===== Prompt =====
@@ -1184,15 +1230,16 @@ async function analyze() {
   setStatus('이미지 압축 중...');
 
   try {
-    const ledgerB64 = await Promise.all(ledgerFiles.map(f => fileToResizedB64(f, 2200, 0.88)));
-    const receiptB64 = await Promise.all(receiptFiles.map(f => fileToResizedB64(f, 1800, 0.85)));
+    setStatus('이미지 준비 중...');
+    const ledgerImgs = await Promise.all(ledgerFiles.map(f => fileToResizedB64(f)));
+    const receiptImgs = await Promise.all(receiptFiles.map(f => fileToResizedB64(f)));
 
-    setStatus('AI 분석 중... (10~40초)');
+    setStatus('AI 분석 중... (10~60초)');
 
     const prompt = buildPrompt(ledgerFiles.length, receiptFiles.length);
     const parts = [{ text: prompt }];
-    for (const b64 of ledgerB64) parts.push({ inlineData: { mimeType: 'image/jpeg', data: b64 } });
-    for (const b64 of receiptB64) parts.push({ inlineData: { mimeType: 'image/jpeg', data: b64 } });
+    for (const img of ledgerImgs) parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+    for (const img of receiptImgs) parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
     const res = await fetch(url, {
@@ -1661,6 +1708,13 @@ function renderOcrLedgerPane() {
       activeOcrObjectUrls.push(url);
       img.src = url;
       img.addEventListener('click', () => openImage(url));
+      img.onerror = () => {
+        img.remove();
+        const ph = document.createElement('div');
+        ph.className = 'ocr-ph';
+        ph.innerHTML = `<div class="ocr-ph-icon">🖼️</div><div>미리보기 불가</div><small>${escHtml(f.name || '사진')} — OCR은 정상 진행됩니다</small>`;
+        imgs.appendChild(ph);
+      };
       imgs.appendChild(img);
     }
   }
@@ -1732,6 +1786,13 @@ function renderOcrReceiptPane(idx) {
     activeOcrObjectUrls.push(url);
     img.src = url;
     img.addEventListener('click', () => openImage(url));
+    img.onerror = () => {
+      img.remove();
+      const ph = document.createElement('div');
+      ph.className = 'ocr-ph';
+      ph.innerHTML = `<div class="ocr-ph-icon">🖼️</div><div>미리보기 불가</div><small>${escHtml(file.name || '사진')} — OCR은 정상 진행됩니다</small>`;
+      imgs.appendChild(ph);
+    };
     imgs.appendChild(img);
   } else {
     imgs.innerHTML = `<div class="ocr-hint">영수증 사진이 없습니다.</div>`;
